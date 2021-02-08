@@ -13,9 +13,8 @@ func main() {
 	flag.Parse()
 
 	if source != "" {
-		bscript.Run(source, showAst, nil)
+		bscript.Run(source, showAst, nil, nil)
 	} else {
-		bscript.Repl()
+		bscript.Repl(nil)
 	}
-
 }

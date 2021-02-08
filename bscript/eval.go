@@ -62,6 +62,8 @@ type Context struct {
 	Pos lexer.Position
 	// the program
 	Program *Program
+	// extra app objects
+	App map[string]interface{}
 	// The sandbox directory
 	Sandbox *string
 }
@@ -748,6 +750,7 @@ func CreateContext(program *Program) *Context {
 		RuntimeStack: []Runtime{},
 		Pos:          lexer.Position{},
 		Program:      program,
+		App:          nil,
 	}
 }
 
@@ -813,7 +816,7 @@ func Load(source string, showAst *bool, ctx *Context) (interface{}, error) {
 	return ast.init(ctx, source)
 }
 
-func Run(source string, showAst *bool, ctx *Context) (interface{}, error) {
+func Run(source string, showAst *bool, ctx *Context, app map[string]interface{}) (interface{}, error) {
 	// run it
 	fmt.Println("Loading...")
 	ast, err := load(source, showAst)
@@ -827,6 +830,7 @@ func Run(source string, showAst *bool, ctx *Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	ctx.App = app
 	fmt.Println("Initializing done.")
 
 	fmt.Println("Running...")
