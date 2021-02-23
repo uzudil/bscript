@@ -754,7 +754,7 @@ func CreateContext(program *Program) *Context {
 	}
 }
 
-func load(source string, showAst *bool) (*Program, error) {
+func load(source string, showAst bool) (*Program, error) {
 
 	ast := &Program{}
 
@@ -800,7 +800,7 @@ func load(source string, showAst *bool) (*Program, error) {
 		r.Close()
 	}
 
-	if showAst != nil && *showAst {
+	if showAst {
 		// print the ast
 		repr.Println(ast)
 		os.Exit(0)
@@ -808,7 +808,7 @@ func load(source string, showAst *bool) (*Program, error) {
 	return ast, nil
 }
 
-func Load(source string, showAst *bool, ctx *Context) (interface{}, error) {
+func Load(source string, showAst bool, ctx *Context) (interface{}, error) {
 	ast, err := load(source, showAst)
 	if err != nil {
 		return nil, err
@@ -816,7 +816,25 @@ func Load(source string, showAst *bool, ctx *Context) (interface{}, error) {
 	return ast.init(ctx, source)
 }
 
-func Run(source string, showAst *bool, ctx *Context, app map[string]interface{}) (interface{}, error) {
+func Build(source string, showAst bool, app map[string]interface{}) (*Program, *Context, error) {
+	fmt.Println("Loading...")
+	ast, err := load(source, showAst)
+	if err != nil {
+		return nil, nil, err
+	}
+	fmt.Println("Loading done.")
+
+	fmt.Println("Initializing...")
+	ctx, err := ast.init(nil, source)
+	if err != nil {
+		return nil, nil, err
+	}
+	ctx.App = app
+
+	return ast, ctx, nil
+}
+
+func Run(source string, showAst bool, ctx *Context, app map[string]interface{}) (interface{}, error) {
 	// run it
 	fmt.Println("Loading...")
 	ast, err := load(source, showAst)
