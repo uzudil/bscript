@@ -396,6 +396,7 @@ func (ctx *Context) debug(message string) {
 
 func evalFunctionCall(ctx *Context, pos lexer.Position, closure *Closure, args []interface{}) (interface{}, error) {
 	if len(ctx.RuntimeStack) > STACK_LIMIT {
+		ctx.printStack()
 		panic("Stack limit exceeded")
 	}
 
