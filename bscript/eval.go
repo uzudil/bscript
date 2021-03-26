@@ -422,7 +422,7 @@ func evalFunctionCall(ctx *Context, pos lexer.Position, closure *Closure, args [
 	}
 
 	// make the call (evaluate the function's code)
-	value, err := evalBlock(ctx, closure.Commands)
+	value, _, err := evalBlock(ctx, closure.Commands)
 	if err != nil {
 		return nil, err
 	}
@@ -606,27 +606,33 @@ func (cmd *Let) Evaluate(ctx *Context) (interface{}, error) {
 }
 
 // Evaluate a Command.
-// some commands return a value which causes the exection of a block to stop (eg. return, while, if)
 func (cmd *Command) Evaluate(ctx *Context) (interface{}, error) {
+	val, _, err := cmd.EvaluateWithStop(ctx)
+	return val, err
+}
+
+// some commands return a value which causes the exection of a block to stop (eg. return, while, if)
+func (cmd *Command) EvaluateWithStop(ctx *Context) (interface{}, bool, error) {
 	ctx.Pos = cmd.Pos
 
 	switch {
 	case cmd.Remark != nil:
-		return nil, nil
+		return nil, false, nil
 	case cmd.Let != nil:
 		_, err := cmd.Let.Evaluate(ctx)
-		return nil, err
+		return nil, false, err
 	case cmd.Fun != nil:
 		_, err := cmd.Fun.Evaluate(ctx)
-		return nil, err
+		return nil, false, err
 	case cmd.Variable != nil:
 		_, err := cmd.Variable.Evaluate(ctx)
-		return nil, err
+		return nil, false, err
 	case cmd.Del != nil:
 		_, err := cmd.Del.Evaluate(ctx)
-		return nil, err
+		return nil, false, err
 	case cmd.Return != nil:
-		return cmd.Return.Value.Evaluate(ctx)
+		val, err := cmd.Return.Value.Evaluate(ctx)
+		return val, true, err
 	case cmd.If != nil:
 		return cmd.If.Evaluate(ctx)
 	case cmd.While != nil:
@@ -636,20 +642,20 @@ func (cmd *Command) Evaluate(ctx *Context) (interface{}, error) {
 	}
 }
 
-func evalBlock(ctx *Context, commands []*Command) (interface{}, error) {
+func evalBlock(ctx *Context, commands []*Command) (interface{}, bool, error) {
 	for index := 0; index < len(commands); {
 		cmd := commands[index]
-		value, err := cmd.Evaluate(ctx)
+		value, stop, err := cmd.EvaluateWithStop(ctx)
 		if err != nil {
-			return nil, err
+			return nil, true, err
 		}
-		if value != nil {
-			return value, nil
+		if stop {
+			return value, stop, nil
 		}
 		// ctx.debug("debug")
 		index++
 	}
-	return nil, nil
+	return nil, false, nil
 }
 
 func (cmd *Del) Evaluate(ctx *Context) (interface{}, error) {
@@ -660,31 +666,31 @@ func (cmd *Del) Evaluate(ctx *Context) (interface{}, error) {
 	return varEval(ctx, cmd.Variable, nil, true)
 }
 
-func (whilecommand *While) Evaluate(ctx *Context) (interface{}, error) {
+func (whilecommand *While) Evaluate(ctx *Context) (interface{}, bool, error) {
 	for {
 		value, err := whilecommand.Condition.Evaluate(ctx)
 		if err != nil {
-			return nil, err
+			return nil, true, err
 		}
 
 		if value != true {
-			return nil, nil
+			return nil, false, nil
 		}
 
-		value, err = evalBlock(ctx, whilecommand.Commands)
+		value, stop, err := evalBlock(ctx, whilecommand.Commands)
 		if err != nil {
-			return nil, err
+			return nil, stop, err
 		}
 		if value != nil {
-			return value, err
+			return value, stop, err
 		}
 	}
 }
 
-func (ifcommand *If) Evaluate(ctx *Context) (interface{}, error) {
+func (ifcommand *If) Evaluate(ctx *Context) (interface{}, bool, error) {
 	value, err := ifcommand.Condition.Evaluate(ctx)
 	if err != nil {
-		return nil, err
+		return nil, true, err
 	}
 
 	if value == true {

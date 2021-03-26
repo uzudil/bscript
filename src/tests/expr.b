@@ -29,6 +29,7 @@ def main() {
     while(i < len(e1)) {
         t := 0;
         while(t < len(e1)) {
+            print("i=" + i + " t=" + t);
             print("" + e1[i] + " && " + e2[t] + "=" + (e1[i] && e2[t]));
             print("" + e1[i] + " || " + e2[t] + "=" + (e1[i] || e2[t]));
             t := t + 1;
