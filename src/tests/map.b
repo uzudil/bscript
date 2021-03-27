@@ -77,11 +77,12 @@ def main() {
     print("dot notation, multiples, changed z: z=" + withcomma.amap.z + " x=" + withcomma.amap.x);
 
     withcomma.list := [1,2,3];
-    # this fails:
     print("dot notation list " + withcomma.list[1]);
-    # so does this (it would also fail with array notation):
-    withcomma.fx := x => x * 2;
+    assert(2, withcomma.list[1]);
+
+    withcomma.fx := (self, x) => x * 2;
     print("dot notation function: " + withcomma.fx(10));
+    assert(20, withcomma.fx(10));
 
     print("Done");
 }
