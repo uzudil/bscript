@@ -21,6 +21,8 @@ def foo3(value) {
     print("in foo3, updated shadowed value=" + value);
 }
 
+print("++++ main def coming +++");
+
 def main() {
     print("value=" + value);
     assert(value, 10);

@@ -777,7 +777,7 @@ func load(source string, showAst bool) (*Program, error) {
 		}
 
 		// load files into their own programs
-		var init *Program
+		var init, last *Program
 		programs := []*Program{}
 		for _, f := range files {
 			if strings.HasSuffix(f.Name(), ".b") {
@@ -789,6 +789,8 @@ func load(source string, showAst bool) (*Program, error) {
 				program := &Program{}
 				if f.Name() == "init.b" {
 					init = program
+				} else if f.Name() == "last.b" {
+					last = program
 				} else {
 					programs = append(programs, program)
 				}
@@ -797,13 +799,19 @@ func load(source string, showAst bool) (*Program, error) {
 			}
 		}
 
+		// append "init.b" last
+		if init != nil {
+			ast.append(init)
+			fmt.Println("\thas init.b")
+		}
 		// combine into one program (while keeping original positions for debugging)
 		for _, program := range programs {
 			ast.append(program)
 		}
-		// append "init.b" last
-		if init != nil {
-			ast.append(init)
+		// append "last.b" last
+		if last != nil {
+			ast.append(last)
+			fmt.Println("\thas last.b")
 		}
 	case mode.IsRegular():
 		r, err := os.Open(source)
@@ -931,6 +939,18 @@ func (program *Program) init(ctx *Context, source string) (*Context, error) {
 			_, err := program.TopLevel[i].Fun.Evaluate(ctx)
 			if err != nil {
 				fmt.Printf("Function defition error: %v\n", err)
+				return ctx, err
+			}
+		}
+	}
+
+	// Run top level commands
+	fmt.Printf("Running global commands...\n")
+	for i := 0; i < len(program.TopLevel); i++ {
+		if program.TopLevel[i].Command != nil {
+			_, err := program.TopLevel[i].Command.Evaluate(ctx)
+			if err != nil {
+				fmt.Printf("Global command error: %v\n", err)
 				return ctx, err
 			}
 		}
