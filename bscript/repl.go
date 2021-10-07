@@ -21,7 +21,7 @@ func processCommand(ctx *Context, cmds string) (bool, error) {
 	case cmd[0] == "run":
 		var err error
 		if len(cmd) > 1 {
-			_, err = Run(cmd[1], nil, ctx, ctx.App)
+			_, err = Run(cmd[1], false, ctx, ctx.App)
 		} else if ctx.Program != nil {
 			_, err = ctx.Program.Evaluate(ctx)
 		} else {
@@ -29,7 +29,7 @@ func processCommand(ctx *Context, cmds string) (bool, error) {
 		}
 		return true, err
 	case cmd[0] == "load":
-		_, err := Load(cmd[1], nil, ctx)
+		_, err := Load(cmd[1], false, ctx)
 		return true, err
 	case cmd[0] == "help":
 		ctx.Builtins["print"](ctx, "bscript Repl commands:")
