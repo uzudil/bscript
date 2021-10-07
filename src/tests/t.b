@@ -8,36 +8,36 @@ def main() {
         [ "z", "x", x => [1, 2, x] ],
     ];
 
-    trace(a[5][2](10)[2]);
-    trace("complicated expression=" + a[5][2](10)[2]);
+    print(a[5][2](10)[2]);
+    print("complicated expression=" + a[5][2](10)[2]);
 
     a[1] := 15;
-    trace("a[1]=" + a[1]);
-    trace(a);
+    print("a[1]=" + a[1]);
+    print(a);
 
     a[len(a)] := "fin";
-    trace(a);
+    print(a);
 
     a[3][1] := "middle";
-    trace(a);
-    trace(a[3][1]);
-    trace(a[3]);
-    trace(substr(a[3][1], 2, 2));
+    print(a);
+    print(a[3][1]);
+    print(a[3]);
+    print(substr(a[3][1], 2, 2));
 
     del a[3][1];
-    trace(a);
+    print(a);
 
     a[1] := { "a": 1, "b": 2, "c": 3 };
-    trace(a);
-    trace(a[1].b);
+    print(a);
+    print(a[1].b);
 
-    trace("a[5][len(a[5]) - 1]=" + a[5][len(a[5]) - 1]);
+    print("a[5][len(a[5]) - 1]=" + a[5][len(a[5]) - 1]);
     last := len(a[5]);
     a[5][last] := "xxx";
-    trace(a);
+    print(a);
     
     a[5][len(a[5])] := "yyy";
-    trace(a);
+    print(a);
 
-    trace("done");
+    print("done");
 }

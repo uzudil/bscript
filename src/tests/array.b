@@ -71,15 +71,15 @@ def main() {
     print("After create in function, list=" + list);
 
     withcomma := [1,2,3,];
-    trace("with comma=" + withcomma);
+    print("with comma=" + withcomma);
 
     a := [ 1, 2, "a", x => x * 2 ];
-    trace(a[0]);
-    trace(a[1]);
-    trace(a[2]);
+    print(a[0]);
+    print(a[1]);
+    print(a[2]);
 
-    trace(a[3](15));
+    print(a[3](15));
     assert(a[3](15), 30);
 
-    trace("Done");
+    print("Done");
 }

@@ -11,5 +11,5 @@ def main() {
     assert("map", typeof(a));    
     a := x => x * 2;
     assert("function", typeof(a));    
-    trace("Done!");
+    print("Done!");
 }

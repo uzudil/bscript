@@ -21,7 +21,7 @@ func processCommand(ctx *Context, cmds string) (bool, error) {
 	case cmd[0] == "run":
 		var err error
 		if len(cmd) > 1 {
-			_, err = Run(cmd[1], nil, ctx)
+			_, err = Run(cmd[1], nil, ctx, ctx.App)
 		} else if ctx.Program != nil {
 			_, err = ctx.Program.Evaluate(ctx)
 		} else {
@@ -45,8 +45,9 @@ func processCommand(ctx *Context, cmds string) (bool, error) {
 }
 
 // Repl is an interactive command interpreter
-func Repl() {
+func Repl(app map[string]interface{}) {
 	ctx := CreateContext(nil)
+	ctx.App = app
 
 	ctx.Builtins["print"](ctx, "")
 	ctx.Builtins["print"](ctx, "     **** Benji4000 bscript v1 ****")
