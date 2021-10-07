@@ -65,7 +65,7 @@ func input(ctx *Context, arg ...interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return text, nil
+	return strings.TrimRight(text, "\n"), nil
 }
 
 func length(ctx *Context, arg ...interface{}) (interface{}, error) {
