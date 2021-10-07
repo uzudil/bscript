@@ -1,20 +1,25 @@
 {
-    "name": "bscript",
+    "name": "b",
+    "displayName": "bscript",
+    "description": "",
     "version": "0.0.1",
     "engines": {
-        "vscode": ">=0.9.0-pre.1"
+        "vscode": "^1.60.0"
     },
-    "publisher": "me",
+    "categories": [
+        "Programming Languages"
+    ],
     "contributes": {
         "languages": [{
             "id": "bscript",
             "aliases": ["BScript", "bscript"],
-            "extensions": [".b",".bscript"]
+            "extensions": [".b"],
+            "configuration": "./language-configuration.json"
         }],
         "grammars": [{
             "language": "bscript",
             "scopeName": "source.bscript",
-            "path": "./syntaxes/bscript.tmGrammar.json"
+            "path": "./syntaxes/.tmLanguage.json"
         }]
     }
 }

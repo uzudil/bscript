@@ -1,0 +1,48 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "bscript",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+            "name": "comment.source.bscript",
+            "match": "#.*"
+        },
+		{
+            "name": "keyword.operator.source.bscript",
+            "match": "(=|<|>|<=|>=|!=|=>|:=|:\\+|:-|:\\*|:\\/|\\%|\\[|\\]|\\.|\\{|\\}|\\|\\||&&|;|\\+|-|/|\\*)"
+        },
+        {
+            "name": "constant.numeric.decimal.bscript",
+            "match": "[0-9]+(\\.[0-9]+)?"
+        },
+		{
+            "name": "entity.name.function.bscript",
+            "match": "[a-zA-Z_]+(?=\\(.*\\))"
+        }
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.",
+				"match": "\\b(if|else|while|def|del|const|return|null|true|false)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.",
+					"match": "\\\\."
+				}
+			]
+		}
+	},
+	"scopeName": "source.bscript"
+}
