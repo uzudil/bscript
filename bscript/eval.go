@@ -827,6 +827,12 @@ func load(source string, showAst bool) (*Program, error) {
 		repr.Println(ast)
 		os.Exit(0)
 	}
+
+	// add the stdlib
+	stdlib := &Program{}
+	Parser.Parse(strings.NewReader(Stdlib), stdlib)
+	ast.append(stdlib)
+
 	return ast, nil
 }
 
