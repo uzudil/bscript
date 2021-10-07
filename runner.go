@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"os"
 
 	"github.com/uzudil/bscript/bscript"
 )
@@ -13,7 +14,10 @@ func main() {
 	flag.Parse()
 
 	if source != "" {
-		bscript.Run(source, *showAst, nil, nil)
+		_, err := bscript.Run(source, *showAst, nil, nil)
+		if err != nil {
+			os.Exit(1)
+		}
 	} else {
 		bscript.Repl(nil)
 	}

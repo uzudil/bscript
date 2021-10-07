@@ -777,6 +777,7 @@ func load(source string, showAst bool) (*Program, error) {
 		}
 
 		// load files into their own programs
+		var init *Program
 		programs := []*Program{}
 		for _, f := range files {
 			if strings.HasSuffix(f.Name(), ".b") {
@@ -786,7 +787,11 @@ func load(source string, showAst bool) (*Program, error) {
 					return nil, err
 				}
 				program := &Program{}
-				programs = append(programs, program)
+				if f.Name() == "init.b" {
+					init = program
+				} else {
+					programs = append(programs, program)
+				}
 				Parser.Parse(r, program)
 				r.Close()
 			}
@@ -794,9 +799,11 @@ func load(source string, showAst bool) (*Program, error) {
 
 		// combine into one program (while keeping original positions for debugging)
 		for _, program := range programs {
-			for _, toplevel := range program.TopLevel {
-				ast.TopLevel = append(ast.TopLevel, toplevel)
-			}
+			ast.append(program)
+		}
+		// append "init.b" last
+		if init != nil {
+			ast.append(init)
 		}
 	case mode.IsRegular():
 		r, err := os.Open(source)
@@ -813,6 +820,12 @@ func load(source string, showAst bool) (*Program, error) {
 		os.Exit(0)
 	}
 	return ast, nil
+}
+
+func (program *Program) append(other *Program) {
+	for _, toplevel := range other.TopLevel {
+		program.TopLevel = append(program.TopLevel, toplevel)
+	}
 }
 
 func Load(source string, showAst bool, ctx *Context) (interface{}, error) {
@@ -939,7 +952,7 @@ func (program *Program) Evaluate(ctx *Context) (interface{}, error) {
 	v := &Variable{
 		Variable: "main",
 		Suffixes: []*VariableSuffix{
-			&VariableSuffix{
+			{
 				CallParams: &CallParams{},
 			},
 		},
