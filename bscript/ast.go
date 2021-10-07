@@ -95,13 +95,24 @@ type Let struct {
 	Pos lexer.Position
 
 	Variable *Variable   `@@`
-	Value    *Expression `":" "=" @@`
+	LetOp    *LetOp      `":" @@`
+	Value    *Expression `@@`
+}
+
+type LetOp struct {
+	Pos lexer.Position
+
+	Assign *string `@"="`
+	Add    *string `| @"+"`
+	Sub    *string `| @"-"`
+	Mul    *string `| @"*"`
+	Div    *string `| @"/"`
 }
 
 type Return struct {
 	Pos lexer.Position
 
-	Value *Expression `"return" @@`
+	Value *Expression `"return" ( @@ )?`
 }
 
 type Operator string

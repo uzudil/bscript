@@ -49,6 +49,13 @@ def callNull(value) {
     return value;
 }
 
+def returnWithoutArg(x) {
+    if(x = 1) {
+        return;
+    }
+    return x;
+}
+
 def main() {
     # call a function that returns null
     x := callNull(1);
@@ -106,4 +113,8 @@ def main() {
     print("anonymous function with closure: f(2)(3)=" + f(2)(3));
     assert(f2(2)(3), 6);
     print("anonymous function with closure, example 2: f2(2)(3)=" + f2(2)(3));
+
+    assert(returnWithoutArg(2), 2);
+    assert(returnWithoutArg(1), null);
+    print("Return without arg works!");
 }

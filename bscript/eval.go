@@ -153,7 +153,7 @@ func (v *Variable) findVar(ctx *Context) (interface{}, error) {
 }
 
 func (v *Variable) Evaluate(ctx *Context) (interface{}, error) {
-	return varEval(ctx, v, nil, false)
+	return varEval(ctx, nil, v, nil, false)
 }
 
 func (f *Factor) Evaluate(ctx *Context) (interface{}, error) {
@@ -455,7 +455,7 @@ func (callParams *CallParams) evalParams(ctx *Context) ([]interface{}, error) {
 	return args, nil
 }
 
-func varEval(ctx *Context, v *Variable, newValue *interface{}, isDelete bool) (interface{}, error) {
+func varEval(ctx *Context, op *LetOp, v *Variable, newValue *interface{}, isDelete bool) (interface{}, error) {
 	// step 1: find the variable
 	value, err := v.findVar(ctx)
 	if err != nil {
@@ -521,7 +521,11 @@ func varEval(ctx *Context, v *Variable, newValue *interface{}, isDelete bool) (i
 				if lastOne && (newValue != nil || isDelete) {
 					if newValue != nil {
 						if int(i) < len(*arr) {
-							(*arr)[int(i)] = *newValue
+							nv, err := op.Evaluate((*arr)[int(i)], *newValue)
+							if err != nil {
+								return nil, err
+							}
+							(*arr)[int(i)] = nv
 						} else {
 							*arr = append(*arr, *newValue)
 						}
@@ -548,7 +552,11 @@ func varEval(ctx *Context, v *Variable, newValue *interface{}, isDelete bool) (i
 					}
 					if lastOne && (newValue != nil || isDelete) {
 						if newValue != nil {
-							_map[s] = *newValue
+							nv, err := op.Evaluate(_map[s], *newValue)
+							if err != nil {
+								return nil, err
+							}
+							_map[s] = nv
 						} else {
 							delete(_map, s)
 						}
@@ -565,7 +573,11 @@ func varEval(ctx *Context, v *Variable, newValue *interface{}, isDelete bool) (i
 			if ok {
 				if lastOne && (newValue != nil || isDelete) {
 					if newValue != nil {
-						_map[suffix.MapKey.Key] = *newValue
+						nv, err := op.Evaluate(_map[suffix.MapKey.Key], *newValue)
+						if err != nil {
+							return nil, err
+						}
+						_map[suffix.MapKey.Key] = nv
 					} else {
 						delete(_map, suffix.MapKey.Key)
 					}
@@ -598,16 +610,54 @@ func (cmd *Let) Evaluate(ctx *Context) (interface{}, error) {
 		for closure := ctx.Closure; closure != nil; closure = closure.Parent {
 			_, ok := closure.Vars[cmd.Variable.Variable]
 			if ok {
-				closure.Vars[cmd.Variable.Variable] = thevalue
+				nv, err := cmd.LetOp.Evaluate(closure.Vars[cmd.Variable.Variable], thevalue)
+				if err != nil {
+					return nil, err
+				}
+				closure.Vars[cmd.Variable.Variable] = nv
 				return nil, nil
 			}
 		}
 		// new var
-		ctx.Closure.Vars[cmd.Variable.Variable] = thevalue
+		nv, err := cmd.LetOp.Evaluate(ctx.Closure.Vars[cmd.Variable.Variable], thevalue)
+		if err != nil {
+			return nil, err
+		}
+		ctx.Closure.Vars[cmd.Variable.Variable] = nv
 		return nil, nil
 	}
 
-	return varEval(ctx, cmd.Variable, &thevalue, false)
+	return varEval(ctx, cmd.LetOp, cmd.Variable, &thevalue, false)
+}
+
+func (op *LetOp) Evaluate(currVal, newVal interface{}) (interface{}, error) {
+	if op.Assign != nil {
+		return newVal, nil
+	}
+
+	if currVal == nil {
+		return nil, lexer.Errorf(op.Pos, "Current value can't be null")
+	}
+
+	switch {
+	case op.Add != nil:
+		switch currVal.(type) {
+		case float64:
+			return currVal.(float64) + newVal.(float64), nil
+		case string:
+			return currVal.(string) + newVal.(string), nil
+		default:
+			return nil, lexer.Errorf(op.Pos, "Value needs to be string or a number")
+		}
+	case op.Sub != nil:
+		return currVal.(float64) - newVal.(float64), nil
+	case op.Div != nil:
+		return currVal.(float64) / newVal.(float64), nil
+	case op.Mul != nil:
+		return currVal.(float64) * newVal.(float64), nil
+	default:
+		panic("Unreachable")
+	}
 }
 
 // Evaluate a Command.
@@ -636,6 +686,9 @@ func (cmd *Command) EvaluateWithStop(ctx *Context) (interface{}, bool, error) {
 		_, err := cmd.Del.Evaluate(ctx)
 		return nil, false, err
 	case cmd.Return != nil:
+		if cmd.Return.Value == nil {
+			return nil, true, nil
+		}
 		val, err := cmd.Return.Value.Evaluate(ctx)
 		return val, true, err
 	case cmd.If != nil:
@@ -668,7 +721,7 @@ func (cmd *Del) Evaluate(ctx *Context) (interface{}, error) {
 		return nil, lexer.Errorf(cmd.Pos, "Del needs an array or map index %q", cmd.Variable)
 	}
 
-	return varEval(ctx, cmd.Variable, nil, true)
+	return varEval(ctx, nil, cmd.Variable, nil, true)
 }
 
 func (whilecommand *While) Evaluate(ctx *Context) (interface{}, bool, error) {
