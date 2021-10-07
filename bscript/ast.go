@@ -76,7 +76,13 @@ type If struct {
 
 	Condition    *Expression `"if" "(" @@ ")" "{"`
 	Commands     []*Command  `( @@ )* "}"`
+	ElseIf       []*ElseIf   `( @@ )*`
 	ElseCommands []*Command  `( "else" "{" ( @@ )* "}" )?`
+}
+
+type ElseIf struct {
+	Condition *Expression `"else" "if" "(" @@ ")" "{"`
+	Commands  []*Command  `( @@ )* "}"`
 }
 
 type Remark struct {

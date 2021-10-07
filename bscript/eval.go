@@ -312,13 +312,18 @@ func (o *OpCmp) Evaluate(ctx *Context, lhs interface{}) (interface{}, error) {
 }
 
 func (b *OpBoolTerm) Evaluate(ctx *Context, lhs interface{}) (interface{}, error) {
-	rhs, err := b.Right.Evaluate(ctx)
-	if err != nil {
-		return nil, err
-	}
 	switch lhs := lhs.(type) {
 	case bool:
-		rhs, ok := rhs.(bool)
+		// short-circuit eval
+		if (b.Operator == "&&" && lhs == false) || (b.Operator == "||" && lhs == true) {
+			return lhs, nil
+		}
+		// lazy eval of rhs
+		rhsI, err := b.Right.Evaluate(ctx)
+		if err != nil {
+			return nil, err
+		}
+		rhs, ok := rhsI.(bool)
 		if !ok {
 			return nil, lexer.Errorf(b.Pos, "rhs of %s must be a boolean", b.Operator)
 		}
@@ -695,6 +700,15 @@ func (ifcommand *If) Evaluate(ctx *Context) (interface{}, bool, error) {
 
 	if value == true {
 		return evalBlock(ctx, ifcommand.Commands)
+	}
+	for _, elseif := range ifcommand.ElseIf {
+		value, err = elseif.Condition.Evaluate(ctx)
+		if err != nil {
+			return nil, true, err
+		}
+		if value == true {
+			return evalBlock(ctx, elseif.Commands)
+		}
 	}
 	return evalBlock(ctx, ifcommand.ElseCommands)
 }
