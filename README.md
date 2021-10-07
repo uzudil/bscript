@@ -3,7 +3,7 @@ A simple scripting language, similar to modern javascript.
 
 Bscript features higher order functions, control flow commands, global variables and constants, etc. 
 
-Browse the [tests](https://github.com/gabor-lbl/benji4000/tree/master/src/tests) for examples or see the [wiki](https://github.com/uzudil/benji4000/wiki) for more info.
+Browse the [tests](https://github.com/gabor-lbl/benji4000/tree/master/src/tests) for examples or see the [wiki](https://github.com/uzudil/benji4000/wiki) for more info. (Builtins and constants are configurable per project.) For a larger body of bscript code, see the [Curse of Svaltfen](https://github.com/uzudil/svaltfen).
 
 ## Using bscript
 
