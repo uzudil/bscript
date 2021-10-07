@@ -11,4 +11,10 @@ def main() {
 
     s := "replace THIS in this sentence";
     print("> " + replace(s, "THIS", "THAT"));
+
+    s := "This is a multiline string.
+    The second line
+
+    and the third.";
+    print(s);
 }

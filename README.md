@@ -13,9 +13,9 @@ Browse the [tests](https://github.com/uzudil/bscript/tree/master/src/tests) for 
 
 ### Literals
 
-- Basic types: numbers, strings, boolean, null. All numbers are floats but are cast to int if needed (array lookups, pixel coordinates, etc.)
-- Arrays: `[1, 'a']` Arrays can contain any other type. To append to an array, add an element to an index past the length of the array.
-- Maps: `{ "a": 1, "b": "c" }` Map keys are always strings. Map elements can be looked up by the `map["a"]` or `map.a` notation.
+- Basic types: numbers, strings, boolean, null. All numbers are floats but are cast to int if needed (array lookups, pixel coordinates, etc.) Literal strings are double-quoted and can span multiple lines.
+- Arrays: `[1, "a"]` Arrays can contain any other type. To append to an array, add an element to an index past the length of the array.
+- Maps: `{ "a": 1, "b": "c" }` or `{ a: 1, b: "c" }` Map keys are always strings. Map elements can be looked up by the `map["a"]` or `map.a` notation.
 - Functions: `x => x + 1` Functions are first-class types.
 - Numerical expressions support the usual arithmetic operations, plus `%` for modulo.
 
@@ -44,14 +44,14 @@ will print `6`.
 - map values can be functions that take a special first argument (usually called "self" or "this") that points to the map that contains them. For example: 
 ```
 player := {
-   "isAlive": self => self.lives > 0,
-   "lives": 3,
+   isAlive: self => self.lives > 0,
+   lives: 3,
 };
-trace(player.isAlive());
+print(player.isAlive());
 ```
 
 ### Control flow commands
-- `if(x) { ... } if else(y) { ... } else { ... }` if statement works like you think it does. The `else` clause is optional.
+- `if(x) { ... } if else(y) { ... } else { ... }` if statement works like you think it does. The `else` clauses are optional.
 - BScript only has one type of loop: `while(x < 10) { ... }`
 - Both `if` and `while` support the following conditional operations: `=`, `!=`, `<`, `<=`, `>`, `>=`.
 - More complex boolean logic can be expressed with and: `&&` and or `||` operators. (These use short-circuit evaluation.)
@@ -64,56 +64,54 @@ trace(player.isAlive());
 - Code execution starts by running the `main` method.
 - Your program can be a single .b file, or a single directory containing any number of .b files.
 - In the latter case, every file in the directory is parsed and joined to produce the program. 
-- When running code from directory, your code can `load` and `save` `map` type objects to/from files. Filenames must be a string with no path characters (`.`, `..`, `/`, `\` are not allowed)
 
 ### Built-in functions
 Bscript code can use the following built-in functions. Their implementation falls into two categories:
 
 These [standard functions](https://github.com/uzudil/bscript/blob/main/bscript/stdlib.go) are implemented in bscript:
-- array_map: map array elements
-- array_join: array to string
-- array_filter: filter array elements
-- array_find: find an array element
-- array_find_index: find the index of an array element
-- array_foreach: loop through an array
-- choose: randomly select from an array
-- basic_sort: sort an array in place
-- basic_sort_copy: sort an array and return a new sorted array
-- array_reverse: reverse an array
-- array_reduce: turn an array into a single value
-- array_remove: remove array elements
-- copy_array: shallow clone an array
-- array_times: fill an array
-- array_concat: concat two arrays
-- array_flatten: flatten an array of arrays
-- copy_map: shallow clone a map
-- roll: dice roll
-- normalize: normalize a value to -1,0,1
-- endsWith: check if a string ends with a suffix
-- startsWith: check if a string starts with a prefix
-- asPercent: turn a 0-1 value into an int percent
-- range: loop through numbers
-- pow: raise a number to a power
+- `array_map`: map array elements
+- `array_join`: array to string
+- `array_filter`: filter array elements
+- `array_find`: find an array element
+- `array_find_index`: find the index of an array element
+- `array_foreach`: loop through an array
+- `choose`: randomly select from an array
+- `basic_sort`: sort an array in place
+- `basic_sort_copy`: sort an array and return a new sorted array
+- `array_reverse`: reverse an array
+- `array_reduce`: turn an array into a single value
+- `array_remove`: remove array elements
+- `copy_array`: shallow clone an array
+- `array_times`: fill an array
+- `array_concat`: concat two arrays
+- `array_flatten`: flatten an array of arrays
+- `copy_map`: shallow clone a map
+- `roll`: dice roll
+- `normalize`: normalize a value to -1,0,1
+- `endsWith`: check if a string ends with a suffix
+- `startsWith`: check if a string starts with a prefix
+- `asPercent`: turn a 0-1 value into an int percent
+- `range`: loop through numbers
+- `pow`: raise a number to a power
 
 These [external functions](https://github.com/uzudil/bscript/blob/main/bscript/builtins.go) are implemented in go:
-- print: print to console, example `print("x=" + x);`
-- input: console input
-- len: string and array length
-- keys: get a map's keys
-- substr: get a part of a string
-- split: split a string
-- replace: replace a part of a string
-- debug: display the stack and variables
-- assert: assertion for testing
-- random: a random value from 0 - 1
-- int: convert the number to int (floor)
-- round: round a number to int
-- abs: absolute value
-- min: minimum of two values
-- max: maximum of two values
-- typeof: return a string that is the type of a variable
-- exit: quit to console
-
+- `print`: print to console, example `print("x=" + x);`
+- `input`: console input
+- `len`: string and array length
+- `keys`: get a map's keys
+- `substr`: get a part of a string
+- `split`: split a string
+- `replace`: replace a part of a string
+- `debug`: display the stack and variables
+- `assert`: assertion for testing
+- `random`: a random value from 0 - 1
+- `int`: convert the number to int (floor)
+- `round`: round a number to int
+- `abs`: absolute value
+- `min`: minimum of two values
+- `max`: maximum of two values
+- `typeof`: return a string that is the type of a variable
+- `exit`: quit to console
 
 ## Building the bscript runner
 
