@@ -56,6 +56,10 @@ def returnWithoutArg(x) {
     return x;
 }
 
+def defaultValues(x, y=1, z=5-3) {
+    return x + y + z;
+}
+
 def main() {
     # call a function that returns null
     x := callNull(1);
@@ -117,4 +121,27 @@ def main() {
     assert(returnWithoutArg(2), 2);
     assert(returnWithoutArg(1), null);
     print("Return without arg works!");
+
+    assert(defaultValues(10), 13);
+    assert(defaultValues(10, 20), 32);
+    assert(defaultValues(10, 20, 30), 60);
+    print("Default function param values works!");
+
+    # some convoluted examples with anonymous functions
+    af := x=1 => x + 1;
+    assert(2, af());
+    assert(3, af(2));
+
+    as :=  (name, greet="Hello") => {
+        return greet + " " + name;
+    };
+    assert("Hello Gabor", as("Gabor"));
+    assert("Mornin' Gabor", as("Gabor", "Mornin'"));
+
+    addOne := x => x + 1;
+    addMore := (x, fx=addOne) => fx(x);
+    assert(10, addMore(9));
+    assert(12, addMore(9, x => x + 3));
+
+    print("Functions done!");
 }

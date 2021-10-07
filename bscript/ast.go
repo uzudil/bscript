@@ -31,18 +31,25 @@ type Const struct {
 type Fun struct {
 	Pos lexer.Position
 
-	Name     string     `"def" @Ident "("`
-	Params   []string   `( @Ident ( "," @Ident )* )*`
-	Commands []*Command `")" "{" ( @@ )* "}"`
+	Name     string      `"def" @Ident "("`
+	Params   []*FunParam `( @@ ( "," @@ )* )*`
+	Commands []*Command  `")" "{" ( @@ )* "}"`
 }
 
 type AnonFun struct {
 	Pos lexer.Position
 
-	Params        []string    `( "(" ( @Ident ( "," @Ident )* )* ")" "=" ">"`
-	SingleParam   *string     `| @Ident "=" ">" )`
+	Params        []*FunParam `( "(" ( @@ ( "," @@ )* )* ")" "=" ">"`
+	SingleParam   *FunParam   `| @@ "=" ">" )`
 	Commands      []*Command  `( "{" ( @@ )* "}"`
 	SingleCommand *Expression `| @@ )`
+}
+
+type FunParam struct {
+	Pos lexer.Position
+
+	Name         string      `@Ident`
+	DefaultValue *Expression `( "=" @@ )?`
 }
 
 type Command struct {

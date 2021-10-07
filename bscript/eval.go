@@ -1,12 +1,15 @@
 package bscript
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/alecthomas/participle/lexer"
@@ -23,13 +26,13 @@ type Evaluatable interface {
 
 type Builtin func(ctx *Context, args ...interface{}) (interface{}, error)
 
-func (c *Closure) String() string {
-	return fmt.Sprintf("%s(%s)", c.Function, strings.Join(c.Params, ","))
-}
+// func (c *Closure) String() string {
+// 	return fmt.Sprintf("%s(%s)", c.Function, strings.Join(c.Params, ","))
+// }
 
 type Closure struct {
 	// function defition: params
-	Params []string
+	Params []*FunParam
 	// function defition: commands
 	Commands []*Command
 	// The current function's name
@@ -127,6 +130,7 @@ func (v *Value) Evaluate(ctx *Context) (interface{}, error) {
 		return v.Subexpression.Evaluate(ctx)
 	}
 	panic("unsupported value type" + repr.String(v))
+	return nil, nil
 }
 
 func (v *Variable) findVar(ctx *Context) (interface{}, error) {
@@ -373,7 +377,7 @@ func (ctx *Context) printStack() {
 	fmt.Println("Runtime Call Stack:")
 	indent := "  "
 	for _, runtime := range ctx.RuntimeStack {
-		fmt.Println(fmt.Sprintf("%s%s at %s\n", indent, runtime.Function, runtime.Pos))
+		fmt.Printf("%s%s at %s\n", indent, runtime.Function, runtime.Pos)
 		indent = indent + "  "
 	}
 }
@@ -388,15 +392,15 @@ func (ctx *Context) debug(message string) {
 	fmt.Println("Closures:")
 	for closure := ctx.Closure; closure != nil; closure = closure.Parent {
 		fmt.Println("-----------------")
-		fmt.Println(fmt.Sprintf("%sFunction: %s\n", indent, closure.Function))
-		fmt.Println(fmt.Sprintf("%sVars: %v\n", indent, closure.Vars))
-		fmt.Println(fmt.Sprintf("%sDefs: %v\n", indent, closure.Defs))
+		fmt.Printf("%sFunction: %s\n", indent, closure.Function)
+		fmt.Printf("%sVars: %v\n", indent, closure.Vars)
+		fmt.Printf("%sDefs: %v\n", indent, closure.Defs)
 		indent = indent + "  "
 	}
 	fmt.Println("------------------------------------")
 	ctx.printStack()
 	fmt.Println("------------------------------------")
-	fmt.Println(fmt.Sprintf("Currently: %s\n", ctx.Pos))
+	fmt.Printf("Currently: %s\n", ctx.Pos)
 }
 
 func evalFunctionCall(ctx *Context, pos lexer.Position, closure *Closure, args []interface{}) (interface{}, error) {
@@ -418,12 +422,18 @@ func evalFunctionCall(ctx *Context, pos lexer.Position, closure *Closure, args [
 	savedClosure := ctx.Closure
 	ctx.Closure = closure
 
-	// create function call param variables
-	if len(closure.Params) != len(args) {
-		return nil, lexer.Errorf(pos, "Not all function params given in call to %s", closure.Function)
-	}
 	for index := 0; index < len(closure.Params); index++ {
-		closure.Vars[closure.Params[index]] = args[index]
+		if index < len(args) {
+			closure.Vars[closure.Params[index].Name] = args[index]
+		} else if closure.Params[index].DefaultValue != nil {
+			v, err := closure.Params[index].DefaultValue.Evaluate(ctx)
+			if err != nil {
+				return nil, err
+			}
+			closure.Vars[closure.Params[index].Name] = v
+		} else {
+			return nil, lexer.Errorf(pos, "Not all function params given in call to %s", closure.Function)
+		}
 	}
 
 	// make the call (evaluate the function's code)
@@ -697,6 +707,7 @@ func (cmd *Command) EvaluateWithStop(ctx *Context) (interface{}, bool, error) {
 		return cmd.While.Evaluate(ctx)
 	default:
 		panic("unsupported command " + repr.String(cmd))
+		return nil, false, nil
 	}
 }
 
@@ -766,7 +777,7 @@ func (ifcommand *If) Evaluate(ctx *Context) (interface{}, bool, error) {
 	return evalBlock(ctx, ifcommand.ElseCommands)
 }
 
-func makeClosure(ctx *Context, name string, params []string, commands []*Command) *Closure {
+func makeClosure(ctx *Context, name string, params []*FunParam, commands []*Command) *Closure {
 	return &Closure{
 		Params:   params,
 		Commands: commands,
@@ -785,9 +796,9 @@ func (fun *Fun) Evaluate(ctx *Context) (interface{}, error) {
 func (anonFun *AnonFun) Evaluate(ctx *Context) (interface{}, error) {
 	name := fmt.Sprintf("_anon_%d", ANON_COUNT)
 	ANON_COUNT++
-	var params []string
+	var params []*FunParam
 	if anonFun.SingleParam != nil {
-		params = []string{*anonFun.SingleParam}
+		params = []*FunParam{anonFun.SingleParam}
 	} else {
 		params = anonFun.Params
 	}
@@ -811,7 +822,7 @@ func (anonFun *AnonFun) Evaluate(ctx *Context) (interface{}, error) {
 func CreateContext(program *Program) *Context {
 	global := &Closure{
 		Function: "global",
-		Params:   []string{},
+		Params:   []*FunParam{},
 		Commands: []*Command{},
 		Vars:     map[string]interface{}{},
 		Defs:     map[string]*Closure{},
@@ -849,10 +860,7 @@ func load(source string, showAst bool) (*Program, error) {
 		for _, f := range files {
 			if strings.HasSuffix(f.Name(), ".b") {
 				fmt.Printf("\tLoading %s\n", f.Name())
-				r, err := os.Open(filepath.Join(source, f.Name()))
-				if err != nil {
-					return nil, err
-				}
+
 				program := &Program{}
 				if f.Name() == "init.b" {
 					init = program
@@ -861,8 +869,10 @@ func load(source string, showAst bool) (*Program, error) {
 				} else {
 					programs = append(programs, program)
 				}
-				Parser.Parse(r, program)
-				r.Close()
+
+				if err = parseFile(filepath.Join(source, f.Name()), f.Name(), program, showAst); err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -881,12 +891,9 @@ func load(source string, showAst bool) (*Program, error) {
 			fmt.Println("\thas last.b")
 		}
 	case mode.IsRegular():
-		r, err := os.Open(source)
-		if err != nil {
+		if err = parseFile(source, source, ast, showAst); err != nil {
 			return nil, err
 		}
-		Parser.Parse(r, ast)
-		r.Close()
 	}
 
 	if showAst {
@@ -901,6 +908,44 @@ func load(source string, showAst bool) (*Program, error) {
 	ast.append(stdlib)
 
 	return ast, nil
+}
+
+func parseFile(path, name string, program *Program, showAst bool) error {
+	// read the program
+	r, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	buf := bytes.NewBuffer(nil)
+	io.Copy(buf, r)
+	r.Close()
+
+	// append a final line
+	m := regexp.MustCompile(`[^0-9a-zA-Z]*`)
+	check := fmt.Sprintf("__%s__", m.ReplaceAllLiteralString(name, ""))
+	buf.WriteString(fmt.Sprintf("\nconst %s = true;\n", check))
+
+	// parse it
+	Parser.Parse(buf, program)
+
+	// check it
+	found := false
+	for i := 0; i < len(program.TopLevel); i++ {
+		if program.TopLevel[i].Const != nil && program.TopLevel[i].Const.Name == check {
+			found = true
+			break
+		}
+	}
+	if !found {
+		if showAst {
+			repr.Println(program)
+		}
+		m = regexp.MustCompile(`Line: ([0-9]+),[^L]*$`)
+		ast := repr.String(program, repr.NoIndent())
+		return fmt.Errorf("in file %s after line %s", path, m.FindStringSubmatch(ast)[1])
+	}
+
+	return nil
 }
 
 func (program *Program) append(other *Program) {

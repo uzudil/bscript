@@ -28,6 +28,7 @@ Browse the [tests](https://github.com/uzudil/bscript/tree/master/src/tests) for 
 ### Functions
 - Define named functions via `def square(n) { return n * n; }`.
 - Function can take other functions as a parameter, or return a function.
+- Function parameters can have default values, for example: `def add(a, b=1)`. You could call this via: `add(1,2)` or `add(1)`.
 - Functions can be declared in another function.
 - Anonymous functions are declared via: `x => x + 1` or `(x,y) => { return x + y; }`
 - Functions are evaluated in the context of their closure. For example:
