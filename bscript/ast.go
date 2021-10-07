@@ -191,7 +191,7 @@ type Map struct {
 type NameValuePair struct {
 	Pos lexer.Position
 
-	Name  string      `@String ":"`
+	Name  string      `(@String | @Ident) ":"`
 	Value *Expression `@@`
 }
 

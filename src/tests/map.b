@@ -84,5 +84,18 @@ def main() {
     print("dot notation function: " + withcomma.fx(10));
     assert(20, withcomma.fx(10));
 
+    # unquoted map key in literals
+    u := {
+        "a": 1,
+        b: 2,
+        "c": 3,
+        d: 4
+    };
+    assert(u.a, 1);
+    assert(u.b, 2);
+    assert(u.c, 3);
+    assert(u.d, 4);
+    print("u=" + u);
+
     print("Done");
 }
