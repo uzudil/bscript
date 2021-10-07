@@ -923,24 +923,6 @@ func (program *Program) init(ctx *Context, source string) (*Context, error) {
 				return ctx, err
 			}
 			ctx.Consts[program.TopLevel[i].Const.Name] = value
-		} else if program.TopLevel[i].Let != nil {
-			_, err := program.TopLevel[i].Let.Evaluate(ctx)
-			if err != nil {
-				fmt.Printf("Global error: %v\n", err)
-				return ctx, err
-			}
-		}
-	}
-
-	// define functions
-	fmt.Printf("Finding functions...\n")
-	for i := 0; i < len(program.TopLevel); i++ {
-		if program.TopLevel[i].Fun != nil {
-			_, err := program.TopLevel[i].Fun.Evaluate(ctx)
-			if err != nil {
-				fmt.Printf("Function defition error: %v\n", err)
-				return ctx, err
-			}
 		}
 	}
 
