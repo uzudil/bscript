@@ -39,3 +39,4 @@ bscript.Repl(app)
 
 ## bscript syntax highlighting
 The vscode directory contains a plugin for syntax highlighting for .b files.
+
