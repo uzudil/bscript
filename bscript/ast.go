@@ -17,10 +17,11 @@ type Program struct {
 type TopLevel struct {
 	Pos lexer.Position
 
-	Remark *Remark `(  @@ `
-	Let    *Let    `| @@ ";"`
-	Const  *Const  `| @@ ";"`
-	Fun    *Fun    `| @@ )`
+	Remark  *Remark  `(  @@ `
+	Let     *Let     `| @@ ";"`
+	Const   *Const   `| @@ ";"`
+	Command *Command `| @@ `
+	Fun     *Fun     `| @@ )`
 }
 
 type Const struct {
