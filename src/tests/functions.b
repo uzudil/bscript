@@ -42,7 +42,18 @@ def f2(n) {
     return g;
 }
 
+def callNull(value) {
+    if(value = 1) {
+        return null;
+    }
+    return value;
+}
+
 def main() {
+    # call a function that returns null
+    x := callNull(1);
+    assert(x, null);
+
     # call a function
     x := double(2);
     assert(x, 4);
