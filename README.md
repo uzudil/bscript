@@ -41,37 +41,37 @@ bscript.Repl(app)
 Or, more likely you want to call out to bscript from inside your code. You can do that like this:
 
 ```go
-    import "github.com/uzudil/bscript/bscript"
+import "github.com/uzudil/bscript/bscript"
 
-    // set up some builtin functions and constants
-    bscript.AddBuiltin("doSomething", myGoFunction)
-    bscript.AddConstant("SPECIAL_VALUE", 42)
+// set up some builtin functions and constants
+bscript.AddBuiltin("doSomething", myGoFunction)
+bscript.AddConstant("SPECIAL_VALUE", 42)
 
-	// Compile the bscript library. Note that you still need 
-    // an empty 'main' method.
-	_, ctx, err := bscript.Build(
-		libraryPath, // file with the 'myFunc' function
-		false,
-		map[string]interface{}{
-			"myObject":      o,
-			"myOtherObject": oo,
-		},
-	)
-	if err != nil {
-		panic(err)
-	}
+// Compile the bscript library. Note that you still need 
+// an empty 'main' method.
+_, ctx, err := bscript.Build(
+	libraryPath, // file with the 'myFunc' function
+	false,
+	map[string]interface{}{
+		"myObject":      o,
+		"myOtherObject": oo,
+	},
+)
+if err != nil {
+	panic(err)
+}
 
-	// Create the command that calls bscript
-	command := &bscript.Command{}
-	err = bscript.CommandParser.ParseString("myFunc();", command)
-	if err != nil {
-		panic(err)
-	}
+// Create the command that calls bscript
+command := &bscript.Command{}
+err = bscript.CommandParser.ParseString("myFunc();", command)
+if err != nil {
+	panic(err)
+}
 ```
 
 Once this is set up, you can call out to bscript (for example from main loop):
 ```go
-    command.Evaluate(ctx)
+command.Evaluate(ctx)
 ```
 
 ## bscript syntax highlighting
