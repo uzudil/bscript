@@ -168,7 +168,7 @@ func (f *Factor) Evaluate(ctx *Context) (interface{}, error) {
 	if f.Exponent == nil {
 		return base, nil
 	}
-	baseNum, exponentNum, err := evaluateFloats(ctx, base, f.Exponent)
+	baseNum, exponentNum, err := evaluateFloats(ctx, base, f.Exponent, f.Pos)
 	if err != nil {
 		return nil, lexer.Errorf(f.Pos, "invalid factor: %s", err)
 	}
@@ -176,7 +176,7 @@ func (f *Factor) Evaluate(ctx *Context) (interface{}, error) {
 }
 
 func (o *OpFactor) Evaluate(ctx *Context, lhs interface{}) (interface{}, error) {
-	lhsNumber, rhsNumber, err := evaluateFloats(ctx, lhs, o.Factor)
+	lhsNumber, rhsNumber, err := evaluateFloats(ctx, lhs, o.Factor, o.Pos)
 	if err != nil {
 		return nil, lexer.Errorf(o.Pos, "invalid arguments for %s: %s", o.Operator, err)
 	}
@@ -207,7 +207,7 @@ func (t *Term) Evaluate(ctx *Context) (interface{}, error) {
 }
 
 func (o *OpTerm) Evaluate(ctx *Context, lhs interface{}) (interface{}, error) {
-	lhsNumber, rhsNumber, err := evaluateFloats(ctx, lhs, o.Term)
+	lhsNumber, rhsNumber, err := evaluateFloats(ctx, lhs, o.Term, o.Pos)
 	if err != nil {
 		if o.Operator == "+" {
 			// special handling for string concat
@@ -373,6 +373,10 @@ func (e *Expression) Evaluate(ctx *Context) (interface{}, error) {
 	return lhs, nil
 }
 
+func (ctx *Context) PrintStack() {
+	ctx.printStack()
+}
+
 func (ctx *Context) printStack() {
 	fmt.Println("Runtime Call Stack:")
 	indent := "  "
@@ -398,7 +402,7 @@ func (ctx *Context) debug(message string) {
 		indent = indent + "  "
 	}
 	fmt.Println("------------------------------------")
-	ctx.printStack()
+	ctx.PrintStack()
 	fmt.Println("------------------------------------")
 	fmt.Printf("Currently: %s\n", ctx.Pos)
 }
@@ -1080,18 +1084,18 @@ func (program *Program) Evaluate(ctx *Context) (interface{}, error) {
 	return v.Evaluate(ctx)
 }
 
-func evaluateFloats(ctx *Context, lhs interface{}, rhsExpr Evaluatable) (float64, float64, error) {
+func evaluateFloats(ctx *Context, lhs interface{}, rhsExpr Evaluatable, pos lexer.Position) (float64, float64, error) {
 	rhs, err := rhsExpr.Evaluate(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
 	lhsNumber, ok := lhs.(float64)
 	if !ok {
-		return 0, 0, fmt.Errorf("lhs must be a number")
+		return 0, 0, lexer.Errorf(pos, "lhs must be a number")
 	}
 	rhsNumber, ok := rhs.(float64)
 	if !ok {
-		return 0, 0, fmt.Errorf("rhs must be a number")
+		return 0, 0, lexer.Errorf(pos, "rhs must be a number")
 	}
 	return lhsNumber, rhsNumber, nil
 }
