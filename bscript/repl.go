@@ -52,7 +52,7 @@ func Repl(app map[string]interface{}) {
 	ctx.Builtins["print"](ctx, "")
 	ctx.Builtins["print"](ctx, "     **** Benji4000 bscript v1 ****")
 	ctx.Builtins["print"](ctx, "")
-	for true {
+	for {
 		ctx.Builtins["print"](ctx, "Ready.")
 		command, err := ctx.Builtins["input"](ctx, "")
 		if err != nil {
@@ -63,30 +63,13 @@ func Repl(app map[string]interface{}) {
 		handled, err := processCommand(ctx, command.(string))
 		if err != nil {
 			ctx.Builtins["print"](ctx, fmt.Sprintf("%s: %s", syntaxError, err))
-		} else if handled == false {
-			err = CommandParser.ParseString(command.(string), ast)
+		} else if !handled {
+			value, err := ParseString(command.(string), ast, ctx)
 			if err != nil {
-				// try a few things to make it compile
-				for _, c := range []string{
-					fmt.Sprintf("return %s;", command.(string)),
-					fmt.Sprintf("%s;", command.(string)),
-				} {
-					err2 := CommandParser.ParseString(c, ast)
-					if err2 == nil {
-						err = nil
-						break
-					}
-				}
+				ctx.Builtins["print"](ctx, fmt.Sprintf("%s: %s", syntaxError, err))
 			}
-			if err == nil {
-				// repr.Println(ast)
-				value, err := ast.Evaluate(ctx)
-				if err != nil {
-					ctx.Builtins["print"](ctx, fmt.Sprintf("%s: %s", syntaxError, err))
-				}
-				if value != nil {
-					ctx.Builtins["print"](ctx, fmt.Sprintf("%v", value))
-				}
+			if value != nil {
+				ctx.Builtins["print"](ctx, fmt.Sprintf("%v", value))
 			}
 		}
 

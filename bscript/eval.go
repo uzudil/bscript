@@ -16,6 +16,8 @@ import (
 	"github.com/alecthomas/repr"
 )
 
+const VERSION = "1.0"
+
 var ANON_COUNT uint32
 
 const STACK_LIMIT = 10000

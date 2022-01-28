@@ -1,6 +1,8 @@
 package bscript
 
 import (
+	"fmt"
+
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
 	"github.com/alecthomas/participle/lexer/ebnf"
@@ -293,3 +295,25 @@ var (
 		participle.Elide("Whitespace"),
 	)
 )
+
+func ParseString(command string, ast Evaluatable, ctx *Context) (interface{}, error) {
+	err := CommandParser.ParseString(command, ast)
+	if err != nil {
+		// try a few things to make it compile
+		for _, c := range []string{
+			fmt.Sprintf("return %s;", command),
+			fmt.Sprintf("%s;", command),
+		} {
+			err2 := CommandParser.ParseString(c, ast)
+			if err2 == nil {
+				err = nil
+				break
+			}
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	// repr.Println(ast)
+	return ast.Evaluate(ctx)
+}
