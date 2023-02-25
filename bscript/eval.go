@@ -380,33 +380,33 @@ func (ctx *Context) PrintStack() {
 }
 
 func (ctx *Context) printStack() {
-	fmt.Println("Runtime Call Stack:")
+	log.Println("Runtime Call Stack:")
 	indent := "  "
 	for _, runtime := range ctx.RuntimeStack {
-		fmt.Printf("%s%s at %s\n", indent, runtime.Function, runtime.Pos)
+		log.Printf("%s%s at %s\n", indent, runtime.Function, runtime.Pos)
 		indent = indent + "  "
 	}
 }
 
 func (ctx *Context) debug(message string) {
-	fmt.Println(message)
+	log.Println(message)
 	indent := "  "
-	// fmt.Println("Constants:")
+	// log.Println("Constants:")
 	// for k, v := range ctx.Consts {
-	// 	fmt.Println(fmt.Sprintf("  %s=%v", k, v))
+	// 	log.Println(fmt.Sprintf("  %s=%v", k, v))
 	// }
-	fmt.Println("Closures:")
+	log.Println("Closures:")
 	for closure := ctx.Closure; closure != nil; closure = closure.Parent {
-		fmt.Println("-----------------")
-		fmt.Printf("%sFunction: %s\n", indent, closure.Function)
-		fmt.Printf("%sVars: %v\n", indent, closure.Vars)
-		fmt.Printf("%sDefs: %v\n", indent, closure.Defs)
+		log.Println("-----------------")
+		log.Printf("%sFunction: %s\n", indent, closure.Function)
+		log.Printf("%sVars: %v\n", indent, closure.Vars)
+		log.Printf("%sDefs: %v\n", indent, closure.Defs)
 		indent = indent + "  "
 	}
-	fmt.Println("------------------------------------")
+	log.Println("------------------------------------")
 	ctx.PrintStack()
-	fmt.Println("------------------------------------")
-	fmt.Printf("Currently: %s\n", ctx.Pos)
+	log.Println("------------------------------------")
+	log.Printf("Currently: %s\n", ctx.Pos)
 }
 
 func evalFunctionCall(ctx *Context, pos lexer.Position, closure *Closure, args []interface{}) (interface{}, error) {
@@ -865,7 +865,7 @@ func load(source string, showAst bool) (*Program, error) {
 		programs := []*Program{}
 		for _, f := range files {
 			if strings.HasSuffix(f.Name(), ".b") {
-				fmt.Printf("\tLoading %s\n", f.Name())
+				log.Printf("\tLoading %s\n", f.Name())
 
 				program := &Program{}
 				if f.Name() == "init.b" {
@@ -885,7 +885,7 @@ func load(source string, showAst bool) (*Program, error) {
 		// append "init.b" last
 		if init != nil {
 			ast.append(init)
-			fmt.Println("\thas init.b")
+			log.Println("\thas init.b")
 		}
 		// combine into one program (while keeping original positions for debugging)
 		for _, program := range programs {
@@ -894,7 +894,7 @@ func load(source string, showAst bool) (*Program, error) {
 		// append "last.b" last
 		if last != nil {
 			ast.append(last)
-			fmt.Println("\thas last.b")
+			log.Println("\thas last.b")
 		}
 	case mode.IsRegular():
 		if err = parseFile(source, source, ast, showAst); err != nil {
@@ -969,14 +969,14 @@ func Load(source string, showAst bool, ctx *Context) (interface{}, error) {
 }
 
 func Build(source string, showAst bool, app map[string]interface{}) (*Program, *Context, error) {
-	fmt.Println("Loading...")
+	log.Println("Loading...")
 	ast, err := load(source, showAst)
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Println("Loading done.")
+	log.Println("Loading done.")
 
-	fmt.Println("Initializing...")
+	log.Println("Initializing...")
 	ctx, err := ast.init(nil, source)
 	if err != nil {
 		return nil, nil, err
@@ -988,28 +988,28 @@ func Build(source string, showAst bool, app map[string]interface{}) (*Program, *
 
 func Run(source string, showAst bool, ctx *Context, app map[string]interface{}) (interface{}, error) {
 	// run it
-	fmt.Println("Loading...")
+	log.Println("Loading...")
 	ast, err := load(source, showAst)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Loading done.")
+	log.Println("Loading done.")
 
-	fmt.Println("Initializing...")
+	log.Println("Initializing...")
 	ctx, err = ast.init(ctx, source)
 	if err != nil {
 		return nil, err
 	}
 	ctx.App = app
-	fmt.Println("Initializing done.")
+	log.Println("Initializing done.")
 
-	fmt.Println("Running...")
+	log.Println("Running...")
 	value, err := ast.Evaluate(ctx)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		log.Printf("Error: %v\n", err)
 		ctx.printStack()
 	}
-	fmt.Println("Run done.")
+	log.Println("Run done.")
 	return value, err
 }
 
@@ -1028,22 +1028,22 @@ func (program *Program) init(ctx *Context, source string) (*Context, error) {
 	case mode.IsDir():
 		ctx.Sandbox = &source
 	}
-	fmt.Printf("Sandbox? %v\n", (ctx.Sandbox != nil))
+	log.Printf("Sandbox? %v\n", (ctx.Sandbox != nil))
 
 	ctx.Program = program
 
 	if len(program.TopLevel) == 0 {
-		fmt.Printf("Program error: %v\n", err)
+		log.Printf("Program error: %v\n", err)
 		return ctx, nil
 	}
 
 	// define constants and globals
-	fmt.Printf("Finding constants and globals...\n")
+	log.Printf("Finding constants and globals...\n")
 	for i := 0; i < len(program.TopLevel); i++ {
 		if program.TopLevel[i].Const != nil {
 			value, err := program.TopLevel[i].Const.Value.Evaluate(ctx)
 			if err != nil {
-				fmt.Printf("Consant error: %v\n", err)
+				log.Printf("Consant error: %v\n", err)
 				return ctx, err
 			}
 			ctx.Consts[program.TopLevel[i].Const.Name] = value
@@ -1051,24 +1051,24 @@ func (program *Program) init(ctx *Context, source string) (*Context, error) {
 	}
 
 	// Run top level commands
-	fmt.Printf("Running global commands...\n")
+	log.Printf("Running global commands...\n")
 	for i := 0; i < len(program.TopLevel); i++ {
 		if program.TopLevel[i].Command != nil {
 			_, err := program.TopLevel[i].Command.Evaluate(ctx)
 			if err != nil {
-				fmt.Printf("Global command error: %v\n", err)
+				log.Printf("Global command error: %v\n", err)
 				return ctx, err
 			}
 		}
 	}
 
-	fmt.Printf("Finding main...\n")
+	log.Printf("Finding main...\n")
 	_, ok := ctx.Closure.Defs["main"]
 	if !ok {
 		return ctx, fmt.Errorf("no main function found")
 	}
 
-	fmt.Printf("Done.\n")
+	log.Printf("Done.\n")
 	return ctx, nil
 }
 

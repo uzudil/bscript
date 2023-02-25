@@ -3,6 +3,7 @@ package bscript
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -54,12 +55,12 @@ func stringArgs(ctx *Context, count int, arg []interface{}) ([]string, error) {
 }
 
 func print(ctx *Context, arg ...interface{}) (interface{}, error) {
-	fmt.Println(EvalString(arg[0]))
+	log.Println(EvalString(arg[0]))
 	return nil, nil
 }
 
 func input(ctx *Context, arg ...interface{}) (interface{}, error) {
-	fmt.Print(EvalString(arg[0]))
+	log.Print(EvalString(arg[0]))
 	reader := bufio.NewReader(os.Stdin)
 	text, err := reader.ReadString('\n')
 	if err != nil {

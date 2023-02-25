@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/uzudil/bscript/bscript"
@@ -17,7 +17,7 @@ func main() {
 	if source != "" {
 		_, err := bscript.Run(source, *showAst, nil, nil)
 		if err != nil {
-			fmt.Printf("Error: %v\n", err)
+			log.Printf("Error: %v\n", err)
 			os.Exit(1)
 		}
 	} else {
