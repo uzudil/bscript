@@ -247,8 +247,9 @@ type OpCmp struct {
 }
 
 type BoolTerm struct {
-	Left  *Cmp     `@@`
-	Right []*OpCmp `{ @@ }`
+	Negated *string  `@"!"?`
+	Left    *Cmp     `@@`
+	Right   []*OpCmp `{ @@ }`
 }
 
 type OpBoolTerm struct {

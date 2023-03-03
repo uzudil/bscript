@@ -22,6 +22,15 @@ def main() {
     print("bb3=" + bb3);
     print("bb3 is false=" + (bb3 = false));
     print("bb4=" + bb4);
+
+    assert(bb, true);
+    assert(!bb, false);
+    x := { a: { b: { c: true }}};
+    print("x is true: " + x.a.b.c);
+    assert(x.a.b.c, true);
+    x.a.b.c := !x.a.b.c;
+    print("x is false: " + x.a.b.c);
+    assert(!x.a.b.c, true);
     
     e1 := [ true, false ];
     e2 := [ true, false ];

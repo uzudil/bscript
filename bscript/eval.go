@@ -357,6 +357,9 @@ func (b *BoolTerm) Evaluate(ctx *Context) (interface{}, error) {
 		}
 		lhs = rhs
 	}
+	if b.Negated != nil {
+		lhs = !(lhs.(bool))
+	}
 	return lhs, nil
 }
 
