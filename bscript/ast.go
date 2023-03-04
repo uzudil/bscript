@@ -239,17 +239,25 @@ type Cmp struct {
 	Right []*OpTerm `{ @@ }`
 }
 
+type BoolCmp struct {
+	Pos lexer.Position
+
+	Positive *Cmp `@@`
+	Negative *Cmp `|"!" @@`
+}
+
 type OpCmp struct {
 	Pos lexer.Position
 
 	Operator Operator `@("=" | "<" "=" | ">" "=" | "<" | ">" | "!" "=")`
-	Cmp      *Cmp     `@@`
+	Cmp      *BoolCmp `@@`
 }
 
 type BoolTerm struct {
-	Negated *string  `@"!"?`
-	Left    *Cmp     `@@`
-	Right   []*OpCmp `{ @@ }`
+	Pos lexer.Position
+
+	Left  *BoolCmp `@@`
+	Right []*OpCmp `{ @@ }`
 }
 
 type OpBoolTerm struct {

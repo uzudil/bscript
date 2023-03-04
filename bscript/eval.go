@@ -345,6 +345,18 @@ func (b *OpBoolTerm) Evaluate(ctx *Context, lhs interface{}) (interface{}, error
 	panic("unreachable")
 }
 
+func (b *BoolCmp) Evaluate(ctx *Context) (interface{}, error) {
+	if b.Positive != nil {
+		return b.Positive.Evaluate(ctx)
+	} else {
+		b, err := b.Negative.Evaluate(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return !(b.(bool)), nil
+	}
+}
+
 func (b *BoolTerm) Evaluate(ctx *Context) (interface{}, error) {
 	lhs, err := b.Left.Evaluate(ctx)
 	if err != nil {
@@ -356,9 +368,6 @@ func (b *BoolTerm) Evaluate(ctx *Context) (interface{}, error) {
 			return nil, err
 		}
 		lhs = rhs
-	}
-	if b.Negated != nil {
-		lhs = !(lhs.(bool))
 	}
 	return lhs, nil
 }

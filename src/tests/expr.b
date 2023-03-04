@@ -9,6 +9,8 @@ bb2 := d = -1;
 bb3 := d > -1;
 bb4 := bb || false;
 
+const CONVO_SUFFIX = [ ",", "!", "?", ".", ":", ";", "\"", "'" ];
+
 def main() {
     assert(a, 1);
     assert(b, 5);
