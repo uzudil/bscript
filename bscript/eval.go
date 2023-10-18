@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/alecthomas/participle/lexer"
 	"github.com/alecthomas/repr"
@@ -875,6 +876,7 @@ func load(source string, showAst bool) (*Program, error) {
 		// load files into their own programs
 		var init, last *Program
 		programs := []*Program{}
+		toParse := map[string]*Program{}
 		for _, f := range files {
 			if strings.HasSuffix(f.Name(), ".b") {
 				log.Printf("\tLoading %s\n", f.Name())
@@ -888,11 +890,28 @@ func load(source string, showAst bool) (*Program, error) {
 					programs = append(programs, program)
 				}
 
-				if err = parseFile(filepath.Join(source, f.Name()), f.Name(), program, showAst); err != nil {
-					return nil, err
-				}
+				toParse[f.Name()] = program
+
+				// if err = parseFile(filepath.Join(source, f.Name()), f.Name(), program, showAst); err != nil {
+				// 	return nil, err
+				// }
 			}
 		}
+
+		// load them in parallel
+		var wg sync.WaitGroup
+		for name, program := range toParse {
+			wg.Add(1)
+
+			name := name
+			program := program
+
+			go func() {
+				defer wg.Done()
+				parseFile(filepath.Join(source, name), name, program, showAst)
+			}()
+		}
+		wg.Wait()
 
 		// append "init.b" last
 		if init != nil {
