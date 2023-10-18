@@ -908,7 +908,9 @@ func load(source string, showAst bool) (*Program, error) {
 
 			go func() {
 				defer wg.Done()
-				parseFile(filepath.Join(source, name), name, program, showAst)
+				if err := parseFile(filepath.Join(source, name), name, program, showAst); err != nil {
+					panic(err)
+				}
 			}()
 		}
 		wg.Wait()
