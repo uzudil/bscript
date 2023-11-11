@@ -396,7 +396,14 @@ func (ctx *Context) printStack() {
 	log.Println("Runtime Call Stack:")
 	indent := "  "
 	for _, runtime := range ctx.RuntimeStack {
-		log.Printf("%s%s at %s\n", indent, runtime.Function, runtime.Pos)
+		fs := runtime.Pos.Filename
+		if fs != "" {
+			idx := strings.LastIndex(fs, "/")
+			if idx >= 0 {
+				fs = fs[idx+1:]
+			}
+		}
+		log.Printf("%s%s at %s:%d\n", indent, runtime.Function, fs, runtime.Pos.Line)
 		indent = indent + "  "
 	}
 }
@@ -965,24 +972,33 @@ func parseFile(path, name string, program *Program, showAst bool) error {
 	buf.WriteString(fmt.Sprintf("\nconst %s = true;\n", check))
 
 	// parse it
-	Parser.Parse(buf, program)
+	tmp := &Program{}
+	Parser.Parse(buf, tmp)
 
 	// check it
 	found := false
-	for i := 0; i < len(program.TopLevel); i++ {
-		if program.TopLevel[i].Const != nil && program.TopLevel[i].Const.Name == check {
+	for i := 0; i < len(tmp.TopLevel); i++ {
+		if tmp.TopLevel[i].Const != nil && tmp.TopLevel[i].Const.Name == check {
 			found = true
 			break
 		}
 	}
 	if !found {
 		if showAst {
-			repr.Println(program)
+			repr.Println(tmp)
 		}
 		m = regexp.MustCompile(`Line: ([0-9]+),[^L]*$`)
-		ast := repr.String(program, repr.NoIndent())
+		ast := repr.String(tmp, repr.NoIndent())
 		return fmt.Errorf("in file %s after line %s", path, m.FindStringSubmatch(ast)[1])
 	}
+
+	// open it again to get the filenames
+	r, err = os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	Parser.Parse(r, program)
 
 	return nil
 }
