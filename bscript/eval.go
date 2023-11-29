@@ -2,6 +2,8 @@ package bscript
 
 import (
 	"bytes"
+	"compress/gzip"
+	"encoding/gob"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -132,8 +134,9 @@ func (v *Value) Evaluate(ctx *Context) (interface{}, error) {
 	case v.Subexpression != nil:
 		return v.Subexpression.Evaluate(ctx)
 	}
-	panic("unsupported value type" + repr.String(v))
-	return nil, nil
+	// panic("unsupported value type" + repr.String(v))
+	// assume it was the empty string
+	return "", nil
 }
 
 func (v *Variable) findVar(ctx *Context) (interface{}, error) {
@@ -866,93 +869,115 @@ func CreateContext(program *Program) *Context {
 }
 
 func load(source string, showAst bool) (*Program, error) {
-
 	ast := &Program{}
-
-	fi, err := os.Stat(source)
-	if err != nil {
-		return nil, err
-	}
-	switch mode := fi.Mode(); {
-	case mode.IsDir():
-		files, err := ioutil.ReadDir(source)
+	if strings.HasSuffix(source, ".bb") {
+		f, err := os.Open(source)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
+		defer f.Close()
 
-		// load files into their own programs
-		var init, last *Program
-		programs := []*Program{}
-		toParse := map[string]*Program{}
-		for _, f := range files {
-			if strings.HasSuffix(f.Name(), ".b") {
-				log.Printf("\tLoading %s\n", f.Name())
+		fz, err := gzip.NewReader(f)
+		if err != nil {
+			return nil, err
+		}
+		defer fz.Close()
 
-				program := &Program{}
-				if f.Name() == "init.b" {
-					init = program
-				} else if f.Name() == "last.b" {
-					last = program
-				} else {
-					programs = append(programs, program)
+		dec := gob.NewDecoder(fz)
+		if err = dec.Decode(ast); err != nil {
+			return nil, err
+		}
+	} else {
+		fi, err := os.Stat(source)
+		if err != nil {
+			return nil, err
+		}
+		switch mode := fi.Mode(); {
+		case mode.IsDir():
+			files, err := ioutil.ReadDir(source)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// load files into their own programs
+			var init, last *Program
+			programs := []*Program{}
+			toParse := map[string]*Program{}
+			for _, f := range files {
+				if strings.HasSuffix(f.Name(), ".b") {
+					log.Printf("\tLoading %s\n", f.Name())
+
+					program := &Program{}
+					if f.Name() == "init.b" {
+						init = program
+					} else if f.Name() == "last.b" {
+						last = program
+					} else {
+						programs = append(programs, program)
+					}
+
+					toParse[f.Name()] = program
+					toParse[f.Name()] = program
+
+					// if err = parseFile(filepath.Join(source, f.Name()), f.Name(), program, showAst); err != nil {
+					// 	return nil, err
+					// }
+					toParse[f.Name()] = program
+
+					// if err = parseFile(filepath.Join(source, f.Name()), f.Name(), program, showAst); err != nil {
+					// 	return nil, err
+					// }
 				}
+			}
 
-				toParse[f.Name()] = program
+			// load them in parallel
+			var wg sync.WaitGroup
+			for name, program := range toParse {
+				wg.Add(1)
 
-				// if err = parseFile(filepath.Join(source, f.Name()), f.Name(), program, showAst); err != nil {
-				// 	return nil, err
-				// }
+				name := name
+				program := program
+
+				go func() {
+					defer wg.Done()
+					if err := parseFile(filepath.Join(source, name), name, program, showAst); err != nil {
+						panic(err)
+					}
+				}()
+			}
+			wg.Wait()
+
+			// append "init.b" last
+			if init != nil {
+				ast.append(init)
+				log.Println("\thas init.b")
+			}
+			// combine into one program (while keeping original positions for debugging)
+			for _, program := range programs {
+				ast.append(program)
+			}
+			// append "last.b" last
+			if last != nil {
+				ast.append(last)
+				log.Println("\thas last.b")
+			}
+		case mode.IsRegular():
+			if err = parseFile(source, source, ast, showAst); err != nil {
+				return nil, err
 			}
 		}
 
-		// load them in parallel
-		var wg sync.WaitGroup
-		for name, program := range toParse {
-			wg.Add(1)
+		if showAst {
+			// print the ast
+			repr.Println(ast)
+			os.Exit(0)
+		}
 
-			name := name
-			program := program
-
-			go func() {
-				defer wg.Done()
-				if err := parseFile(filepath.Join(source, name), name, program, showAst); err != nil {
-					panic(err)
-				}
-			}()
-		}
-		wg.Wait()
-
-		// append "init.b" last
-		if init != nil {
-			ast.append(init)
-			log.Println("\thas init.b")
-		}
-		// combine into one program (while keeping original positions for debugging)
-		for _, program := range programs {
-			ast.append(program)
-		}
-		// append "last.b" last
-		if last != nil {
-			ast.append(last)
-			log.Println("\thas last.b")
-		}
-	case mode.IsRegular():
-		if err = parseFile(source, source, ast, showAst); err != nil {
-			return nil, err
-		}
+		// add the stdlib
+		stdlib := &Program{}
+		Parser.Parse(strings.NewReader(Stdlib), stdlib)
+		ast.append(stdlib)
 	}
-
-	if showAst {
-		// print the ast
-		repr.Println(ast)
-		os.Exit(0)
-	}
-
-	// add the stdlib
-	stdlib := &Program{}
-	Parser.Parse(strings.NewReader(Stdlib), stdlib)
-	ast.append(stdlib)
-
 	return ast, nil
 }
 
@@ -1004,9 +1029,7 @@ func parseFile(path, name string, program *Program, showAst bool) error {
 }
 
 func (program *Program) append(other *Program) {
-	for _, toplevel := range other.TopLevel {
-		program.TopLevel = append(program.TopLevel, toplevel)
-	}
+	program.TopLevel = append(program.TopLevel, other.TopLevel...)
 }
 
 func Load(source string, showAst bool, ctx *Context) (interface{}, error) {
@@ -1033,6 +1056,29 @@ func Build(source string, showAst bool, app map[string]interface{}) (*Program, *
 	ctx.App = app
 
 	return ast, ctx, nil
+}
+
+func Compile(source, output string) error {
+	ast, err := load(source, false)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(output)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	fz := gzip.NewWriter(f)
+	defer fz.Close()
+
+	enc := gob.NewEncoder(fz)
+	err = enc.Encode(ast)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func Run(source string, showAst bool, ctx *Context, app map[string]interface{}) (interface{}, error) {
